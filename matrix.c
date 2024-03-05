@@ -19,6 +19,23 @@ void finish(void){
 	exit(0);
 }
 
+void get_battery(int *tens, int *units){
+	FILE *now, *full;
+	int cur, max;
+
+	now = fopen("/sys/class/power_supply/BAT0/charge_now", "r");
+	full = fopen("/sys/class/power_supply/BAT0/charge_full", "r");
+
+	fscanf(now, "%d", &cur);
+	fscanf(full, "%d", &max);
+
+	fclose(now); fclose(full);
+
+	max /= 1000; cur /= max;
+
+	*tens = cur/10; *units = cur%10;
+}
+
 typedef struct stream{
 	int head;
 	int len;
@@ -66,7 +83,8 @@ int main(int argc, char *argv[]){
 	init_pair(COLOR_YELLOW, COLOR_YELLOW, -1);
 	init_pair(COLOR_MAGENTA, COLOR_MAGENTA, -1);
 
-	int keypress, iter=0;
+	int keypress, iter=0, bat_tens=0, bat_units=0;
+	get_battery(&bat_tens, &bat_units);
 
 	stream streams[COLS/2];
 	for(int i=0; i<COLS/2; ++i){
@@ -94,6 +112,19 @@ int main(int argc, char *argv[]){
 				struct tm *loc = localtime(&rawtime);
 				addch('0' + (loc->tm_min)/10);
 				addch('0' + (loc->tm_min)%10);
+			}else if(stat[i] == 'b'){
+				if(bat_tens > 99){
+					addch('1');
+					stat_len++;
+				}
+				if(bat_tens > 9){
+					addch('0' + (bat_tens/10)%10);
+					stat_len++;
+				}
+				addch('0' + bat_tens%10);
+				stat_len++;
+				addch('.');
+				addch('0' + bat_units);
 			}else if(stat[i] == 'W'){
 				attron(COLOR_PAIR(COLOR_WHITE));
 				stat_len -= 2;
