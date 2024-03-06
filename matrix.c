@@ -202,9 +202,7 @@ int main(int argc, char *argv[]){
 			}else if(stat[i] == 'b'){
 				get_battery(&bat_tens, &bat_units);
 				addch('0' + (bat_tens/10)%10);
-				cur_len++;
 				addch('0' + bat_tens%10);
-				cur_len++;
 				addch('.');
 				addch('0' + bat_units);
 				cur_len += 4;
