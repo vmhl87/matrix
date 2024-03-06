@@ -120,6 +120,8 @@ int main(int argc, char *argv[]){
 	init_pair(COLOR_YELLOW, COLOR_YELLOW, -1);
 	init_pair(COLOR_MAGENTA, COLOR_MAGENTA, -1);
 
+	attron(COLOR_PAIR(COLOR_WHITE));
+
 	// store keypress & battery amounts
 	int keypress, iter=0, bat_tens=0, bat_units=0;
 
