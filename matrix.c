@@ -108,19 +108,29 @@ int main(int argc, char *argv[]){
 	signal(SIGTSTP, sighandler);
 
 	// colors
+	enum colortype{
+		BLACK = 1,
+		RED = 2,
+		CYAN = 3,
+		BLUE = 4,
+		GREEN = 5,
+		WHITE = 6,
+		YELLOW = 7,
+		MAGENTA = 8
+	};
+
 	start_color();
 	use_default_colors();
-	init_pair(COLOR_BLACK, -1, -1);
-	init_pair(COLOR_RED, COLOR_RED, -1);
-	init_pair(COLOR_CYAN, COLOR_CYAN, -1);
-	init_pair(COLOR_BLUE, COLOR_BLUE, -1);
-	init_pair(COLOR_GREEN, COLOR_GREEN, -1);
-	init_pair(COLOR_WHITE, COLOR_WHITE, -1);
-	init_pair(COLOR_GREEN, COLOR_GREEN, -1);
-	init_pair(COLOR_YELLOW, COLOR_YELLOW, -1);
-	init_pair(COLOR_MAGENTA, COLOR_MAGENTA, -1);
+	init_pair(BLACK, -1, -1);
+	init_pair(RED, COLOR_RED, -1);
+	init_pair(CYAN, COLOR_CYAN, -1);
+	init_pair(BLUE, COLOR_BLUE, -1);
+	init_pair(WHITE, COLOR_WHITE, -1);
+	init_pair(GREEN, COLOR_GREEN, -1);
+	init_pair(YELLOW, COLOR_YELLOW, -1);
+	init_pair(MAGENTA, COLOR_MAGENTA, -1);
 
-	attron(COLOR_PAIR(COLOR_WHITE));
+	attron(COLOR_PAIR(WHITE));
 
 	// store keypress & battery amounts
 	int keypress, iter=0, bat_tens=0, bat_units=0;
@@ -130,7 +140,9 @@ int main(int argc, char *argv[]){
 	// the status, only the last ones get updated (which could
 	// be useful for some things I suppose)
 	int bat_loc=-1, hour_loc=-1, min_loc=-1,
-		bat_height=1, hour_height=1, min_height=1;
+		bat_height, hour_height, min_height;
+	// colors
+	enum colortype bat_col, hour_col, min_col;
 
 	// initialize streams
 	stream streams[COLS/2];
@@ -147,6 +159,8 @@ int main(int argc, char *argv[]){
 	// length of current line of text (this is somewhat fragmented
 	// and due to a drop-in hotfix for multiline status bar)
 	int cur_len=0;
+	// store current color
+	enum colortype cur_col=WHITE;
 	
 	// iterate over all characters of status bar
 	for(int i=0; i<strlen(stat); ++i){
@@ -159,78 +173,84 @@ int main(int argc, char *argv[]){
 		if(stat[i] == '\\'){
 			// increment index to get to the next char
 			i++;
-			// account for this next char (again we account for
-			// actual escape chars later)
-			cur_len++;
+			// we assume this is an escape sequence and doesn't
+			// take up any space on-screen
+			cur_len--;
 			// if is a \h, retrieve hours and print
 			if(stat[i] == 'h'){
 				time_t rawtime = time(0);
 				struct tm *loc = localtime(&rawtime);
 				addch('0' + (loc->tm_hour)/10);
 				addch('0' + (loc->tm_hour)%10);
-				// set location of hour
+				// correct printed length
+				cur_len += 2;
+				// set location of hour and color
 				hour_loc = cur_len+4;
 				hour_height = stat_height;
+				hour_col = cur_col;
 			// same with minutes
 			}else if(stat[i] == 'm'){
 				time_t rawtime = time(0);
 				struct tm *loc = localtime(&rawtime);
 				addch('0' + (loc->tm_min)/10);
 				addch('0' + (loc->tm_min)%10);
+				cur_len += 2;
 				min_loc = cur_len+4;
 				min_height = stat_height;
+				min_col = cur_col;
 			// and same with battery
 			}else if(stat[i] == 'b'){
 				get_battery(&bat_tens, &bat_units);
-
 				addch('0' + (bat_tens/10)%10);
 				cur_len++;
 				addch('0' + bat_tens%10);
 				cur_len++;
 				addch('.');
 				addch('0' + bat_units);
+				cur_len += 4;
 				bat_loc = cur_len+2;
 				bat_height = stat_height;
+				bat_col = cur_col;
 			// if it is a color escape code, set the color
-			// and correct the current length, also, as a
-			// result of this bad implementation, if a time or
-			// battery string is colorized in the status bar it
-			// doesn't stay colorized when it gets updated (though
-			// I might fix this later)
 			}else if(stat[i] == 'W'){
-				attron(COLOR_PAIR(COLOR_WHITE));
-				cur_len -= 2;
+				attron(COLOR_PAIR(WHITE));
+				cur_col = WHITE;
 			}else if(stat[i] == 'G'){
-				attron(COLOR_PAIR(COLOR_GREEN));
-				cur_len -= 2;
+				attron(COLOR_PAIR(GREEN));
+				cur_col = GREEN;
 			}else if(stat[i] == 'B'){
-				attron(COLOR_PAIR(COLOR_BLUE));
-				cur_len -= 2;
+				attron(COLOR_PAIR(BLUE));
+				cur_col = BLUE;
 			}else if(stat[i] == 'R'){
-				attron(COLOR_PAIR(COLOR_RED));
-				cur_len -= 2;
+				attron(COLOR_PAIR(RED));
+				cur_col = RED;
 			}else if(stat[i] == 'Y'){
-				attron(COLOR_PAIR(COLOR_YELLOW));
-				cur_len -= 2;
+				attron(COLOR_PAIR(YELLOW));
+				cur_col = YELLOW;
 			}else if(stat[i] == 'M'){
-				attron(COLOR_PAIR(COLOR_MAGENTA));
-				cur_len -= 2;
+				attron(COLOR_PAIR(MAGENTA));
+				cur_col = MAGENTA;
 			}else if(stat[i] == 'C'){
-				attron(COLOR_PAIR(COLOR_CYAN));
-				cur_len -= 2;
+				attron(COLOR_PAIR(CYAN));
+				cur_col = CYAN;
+			// escape backslashes and quotes
+			}else if(stat[i] == '\\'){
+				addch('\\');
+				cur_len++;
+			}else if(stat[i] == '\''){
+				addch('\'');
+				cur_len++;
+			}else if(stat[i] == '"'){
+				addch('"');
+				cur_len++;
 			// if the escape char is a newline, increment
 			// status string height and reset position
 			}else if(stat[i] == 'n'){
-				cur_len -= 2;
 				move(3+stat_height, 6);
 				stat_height++;
 				// update overall length
 				if(cur_len > stat_len) stat_len = cur_len;
 				cur_len = 0;
-			// otherwise print the characters normally
-			}else{
-				addch('\\');
-				addch(stat[i]);
 			}
 		// if normal character print normally
 		}else addch(stat[i]);
@@ -280,9 +300,9 @@ int main(int argc, char *argv[]){
 				// draw it (and set it to green, because previously
 				// when it was drawn as the head, it was drawn in white)
 				if(streams[i].head > 0 && streams[i].head <= LINES){
-					attron(COLOR_PAIR(COLOR_GREEN));
+					attron(COLOR_PAIR(GREEN));
 					trych(streams[i].last, streams[i].head-1, i*2);
-					attroff(COLOR_PAIR(COLOR_GREEN));
+					attroff(COLOR_PAIR(GREEN));
 				}
 				// if the head can be drawn, draw it in white, and save it
 				// so that it can be greenified next update
@@ -320,11 +340,13 @@ int main(int argc, char *argv[]){
 		if(bat_loc+1 && (iter%300)==0){
 			get_battery(&bat_tens, &bat_units);
 			// redraw
+			attron(COLOR_PAIR(bat_col));
 			move(2+bat_height, bat_loc);
 			addch('0' + (bat_tens/10)%10);
 			addch('0' + bat_tens%10);
 			addch('.');
 			addch('0' + bat_units);
+			attroff(COLOR_PAIR(bat_col));
 		}
 
 		// similar with clock, but these update every 5 sec
@@ -332,16 +354,20 @@ int main(int argc, char *argv[]){
 			move(2+hour_height, hour_loc);
 			time_t rawtime = time(0);
 			struct tm *loc = localtime(&rawtime);
+			attron(COLOR_PAIR(hour_col));
 			addch('0' + (loc->tm_hour)/11);
 			addch('0' + (loc->tm_hour)%10);
+			attroff(COLOR_PAIR(hour_col));
 		}
 
 		if(min_loc+1 && (iter%50)==0){
 			move(2+min_height, min_loc);
 			time_t rawtime = time(0);
 			struct tm *loc = localtime(&rawtime);
+			attron(COLOR_PAIR(min_col));
 			addch('0' + (loc->tm_min)/10);
 			addch('0' + (loc->tm_min)%10);
+			attroff(COLOR_PAIR(min_col));
 		}
 
 		// pause for 80 ms
