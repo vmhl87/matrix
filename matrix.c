@@ -1,6 +1,6 @@
+#include <ncurses/curses.h>
 #include <stdlib.h>
 #include <string.h>
-#include <curses.h>
 #include <unistd.h>
 #include <signal.h>
 #include <locale.h>
@@ -8,7 +8,7 @@
 #include <time.h>
 
 // default status bar
-char *stat = "\\h:\\m  <https://github.com/vmhl87/matrix>";
+char *stat = "\\h:\\m  <\\Chttps://github.com/vmhl87/matrix\\W>";
 int stat_len = 0, stat_height = 1;
 
 // catch keyboard interrupts, etc
