@@ -15,6 +15,9 @@ by the escape characters `\h` and `\m`, and battery percentage is
 similarly represented by `\b`. Colors can be set with `\R`, `\G`, `\B`,
 `\Y`, `\C`, `\W`, etc, and newlines are `\n`.
 
+For example, matrix can be run with `matrix "hello world" "01"` to display the
+status `hello world` in the top left, with 0s and 1s falling down the screen.
+
 The parser isn't smart enough to check if the status string goes off the screen,
 so be careful of that.
 
