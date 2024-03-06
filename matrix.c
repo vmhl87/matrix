@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <time.h>
 
+char *stat = "\\h:\\m - \\b%";
+int stat_len = 0;
+
 volatile sig_atomic_t signal_status = 0;
 
 void sighandler(int s){
@@ -33,6 +36,8 @@ void get_battery(int *tens, int *units){
 
 	max /= 1000; cur /= max;
 
+	if(cur > 999) cur = 999;
+
 	*tens = cur/10; *units = cur%10;
 }
 
@@ -42,9 +47,6 @@ typedef struct stream{
 	int mod;
 	char last;
 }stream;
-
-char *stat = "\\C<\\Wchronos\\C@\\Wragnarok\\C>\\W   \\h\\C:\\W\\m  xx.x\\C%\\W";
-int stat_len = 0;
 
 void trych(char c, int y, int x){
 	if(x>3&&x<8+stat_len&&y>1&&y<5) return;
@@ -86,11 +88,13 @@ int main(int argc, char *argv[]){
 	int keypress, iter=0, bat_tens=0, bat_units=0;
 	get_battery(&bat_tens, &bat_units);
 
+	int bat_loc=-1, hour_loc=-1, min_loc=-1;
+
 	stream streams[COLS/2];
 	for(int i=0; i<COLS/2; ++i){
 		streams[i].head = -5 - (int)rand()%80;
 		streams[i].len = 7 + (int)rand()%20;
-		streams[i].mod = 2 + (int)rand()%5;
+		streams[i].mod = 1 + (int)rand()%3;
 	}
 
 	move(3, 4);
@@ -107,24 +111,21 @@ int main(int argc, char *argv[]){
 				struct tm *loc = localtime(&rawtime);
 				addch('0' + (loc->tm_hour)/10);
 				addch('0' + (loc->tm_hour)%10);
+				hour_loc = stat_len+4;
 			}else if(stat[i] == 'm'){
 				time_t rawtime = time(0);
 				struct tm *loc = localtime(&rawtime);
 				addch('0' + (loc->tm_min)/10);
 				addch('0' + (loc->tm_min)%10);
+				min_loc = stat_len+4;
 			}else if(stat[i] == 'b'){
-				if(bat_tens > 99){
-					addch('1');
-					stat_len++;
-				}
-				if(bat_tens > 9){
-					addch('0' + (bat_tens/10)%10);
-					stat_len++;
-				}
+				addch('0' + (bat_tens/10)%10);
+				stat_len++;
 				addch('0' + bat_tens%10);
 				stat_len++;
 				addch('.');
 				addch('0' + bat_units);
+				bat_loc = stat_len+2;
 			}else if(stat[i] == 'W'){
 				attron(COLOR_PAIR(COLOR_WHITE));
 				stat_len -= 2;
@@ -191,13 +192,38 @@ int main(int argc, char *argv[]){
 				if(streams[i].head >= LINES+streams[i].len){
 					streams[i].head = -5 - (int)rand()%20;
 					streams[i].len = 7 + (int)rand()%20;
-					streams[i].mod = 2 + (int)rand()%5;
+					streams[i].mod = 1 + (int)rand()%3;
 				}
 				streams[i].head++;
 			}
 		}
 
-		napms(40);
+		if(bat_loc+1 && (iter%300)==0){
+			get_battery(&bat_tens, &bat_units);
+			move(3, bat_loc);
+			addch('0' + (bat_tens/10)%10);
+			addch('0' + bat_tens%10);
+			addch('.');
+			addch('0' + bat_units);
+		}
+
+		if(hour_loc+1 && (iter%50)==0){
+			move(3, hour_loc);
+			time_t rawtime = time(0);
+			struct tm *loc = localtime(&rawtime);
+			addch('0' + (loc->tm_hour)/11);
+			addch('0' + (loc->tm_hour)%10);
+		}
+
+		if(min_loc+1 && (iter%50)==0){
+			move(3, min_loc);
+			time_t rawtime = time(0);
+			struct tm *loc = localtime(&rawtime);
+			addch('0' + (loc->tm_min)/10);
+			addch('0' + (loc->tm_min)%10);
+		}
+
+		napms(80);
 	}
 	
 	finish();
