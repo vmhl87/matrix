@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <time.h>
 
-// default status bar - hours:minutes battery%
-char *stat = "\\h:\\m - \\b%";
+// default status bar
+char *stat = "\\h:\\m  <https://github.com/vmhl87/matrix>";
 int stat_len = 0, stat_height = 1;
 
 // catch keyboard interrupts, etc
