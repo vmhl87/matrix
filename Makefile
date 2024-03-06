@@ -1,2 +1,2 @@
 all:
-	gcc -O2 matrix.c -o ./matrix -lncurses
+	gcc -Ofast -march=native matrix.c -o ./matrix -lncurses
