@@ -8,7 +8,7 @@
 #include <time.h>
 
 char *stat = "\\h:\\m - \\b%";
-int stat_len = 0;
+int stat_len = 0, stat_height = 1;
 
 volatile sig_atomic_t signal_status = 0;
 
@@ -49,7 +49,7 @@ typedef struct stream{
 }stream;
 
 void trych(char c, int y, int x){
-	if(x>3&&x<8+stat_len&&y>1&&y<5) return;
+	if(x>3&&x<8+stat_len&&y>1&&y<4+stat_height) return;
 	move(y, x);
 	addch(c);
 }
@@ -88,7 +88,8 @@ int main(int argc, char *argv[]){
 	int keypress, iter=0, bat_tens=0, bat_units=0;
 	get_battery(&bat_tens, &bat_units);
 
-	int bat_loc=-1, hour_loc=-1, min_loc=-1;
+	int bat_loc=-1, hour_loc=-1, min_loc=-1,
+		bat_height=1, hour_height=1, min_height=1;
 
 	stream streams[COLS/2];
 	for(int i=0; i<COLS/2; ++i){
@@ -97,72 +98,89 @@ int main(int argc, char *argv[]){
 		streams[i].mod = 1 + (int)rand()%3;
 	}
 
-	move(3, 4);
-	addstr("│");
-	addch(' ');
+	move(3, 6);
+
+	int cur_len=0;
 	
 	for(int i=0; i<strlen(stat); ++i){
-		stat_len++;
+		cur_len++;
 		if(stat[i] == '\\'){
 			i++;
-			stat_len++;
+			cur_len++;
 			if(stat[i] == 'h'){
 				time_t rawtime = time(0);
 				struct tm *loc = localtime(&rawtime);
 				addch('0' + (loc->tm_hour)/10);
 				addch('0' + (loc->tm_hour)%10);
-				hour_loc = stat_len+4;
+				hour_loc = cur_len+4;
+				hour_height = stat_height;
 			}else if(stat[i] == 'm'){
 				time_t rawtime = time(0);
 				struct tm *loc = localtime(&rawtime);
 				addch('0' + (loc->tm_min)/10);
 				addch('0' + (loc->tm_min)%10);
-				min_loc = stat_len+4;
+				min_loc = cur_len+4;
+				min_height = stat_height;
 			}else if(stat[i] == 'b'){
 				addch('0' + (bat_tens/10)%10);
-				stat_len++;
+				cur_len++;
 				addch('0' + bat_tens%10);
-				stat_len++;
+				cur_len++;
 				addch('.');
 				addch('0' + bat_units);
-				bat_loc = stat_len+2;
+				bat_loc = cur_len+2;
+				bat_height = stat_height;
 			}else if(stat[i] == 'W'){
 				attron(COLOR_PAIR(COLOR_WHITE));
-				stat_len -= 2;
+				cur_len -= 2;
 			}else if(stat[i] == 'G'){
 				attron(COLOR_PAIR(COLOR_GREEN));
-				stat_len -= 2;
+				cur_len -= 2;
 			}else if(stat[i] == 'B'){
 				attron(COLOR_PAIR(COLOR_BLUE));
-				stat_len -= 2;
+				cur_len -= 2;
 			}else if(stat[i] == 'R'){
 				attron(COLOR_PAIR(COLOR_RED));
-				stat_len -= 2;
+				cur_len -= 2;
 			}else if(stat[i] == 'Y'){
 				attron(COLOR_PAIR(COLOR_YELLOW));
-				stat_len -= 2;
+				cur_len -= 2;
 			}else if(stat[i] == 'M'){
 				attron(COLOR_PAIR(COLOR_MAGENTA));
-				stat_len -= 2;
+				cur_len -= 2;
 			}else if(stat[i] == 'C'){
 				attron(COLOR_PAIR(COLOR_CYAN));
-				stat_len -= 2;
+				cur_len -= 2;
+			}else if(stat[i] == 'n'){
+				cur_len -= 2;
+				move(3+stat_height, 6);
+				stat_height++;
+				if(cur_len > stat_len) stat_len = cur_len;
+				cur_len = 0;
 			}else{
 				addch('\\');
 				addch(stat[i]);
 			}
 		}else addch(stat[i]);
 	}
-	
-	addch(' ');
-	addstr("│");
+
+	if(cur_len > stat_len) stat_len = cur_len;
+
+	for(int i=0; i<stat_height; ++i){
+		move(3+i, 4);
+		addstr("│");
+		addch(' ');
+		move(3+i, 6+stat_len);
+		addch(' ');
+		addstr("│");
+	}
 
 	move(2, 4);
 	addstr("┌");
 	for(int i=0; i<stat_len+2; ++i) addstr("─");
 	addstr("┐");
 
-	move(4, 4);
+	move(3+stat_height, 4);
 	addstr("└");
 	for(int i=0; i<stat_len+2; ++i) addstr("─");
 	addstr("┘");
@@ -186,7 +204,8 @@ int main(int argc, char *argv[]){
 					streams[i].last = (int)rand()%90 + 33;
 					trych(streams[i].last, streams[i].head, i*2);
 				}
-				if(streams[i].head >= streams[i].len && streams[i].head < LINES+streams[i].len){
+				if(streams[i].head >= streams[i].len &&
+				streams[i].head < LINES+streams[i].len){
 					trych(' ', streams[i].head-streams[i].len, i*2);
 				}
 				if(streams[i].head >= LINES+streams[i].len){
@@ -200,7 +219,7 @@ int main(int argc, char *argv[]){
 
 		if(bat_loc+1 && (iter%300)==0){
 			get_battery(&bat_tens, &bat_units);
-			move(3, bat_loc);
+			move(2+bat_height, bat_loc);
 			addch('0' + (bat_tens/10)%10);
 			addch('0' + bat_tens%10);
 			addch('.');
@@ -208,7 +227,7 @@ int main(int argc, char *argv[]){
 		}
 
 		if(hour_loc+1 && (iter%50)==0){
-			move(3, hour_loc);
+			move(2+hour_height, hour_loc);
 			time_t rawtime = time(0);
 			struct tm *loc = localtime(&rawtime);
 			addch('0' + (loc->tm_hour)/11);
@@ -216,7 +235,7 @@ int main(int argc, char *argv[]){
 		}
 
 		if(min_loc+1 && (iter%50)==0){
-			move(3, min_loc);
+			move(2+min_height, min_loc);
 			time_t rawtime = time(0);
 			struct tm *loc = localtime(&rawtime);
 			addch('0' + (loc->tm_min)/10);
