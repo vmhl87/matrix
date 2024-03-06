@@ -19,6 +19,9 @@ void sighandler(int s){
 	signal_status = s;
 }
 
+// stop compiler from complaining about addwstr
+int addwstr(const wchar_t *wstr);
+
 // cleanup (restore terminal to normal mode)
 void finish(void){
 	curs_set(1);
@@ -79,7 +82,7 @@ int main(int argc, char *argv[]){
 	// first one as the status bar string
 	if(argc > 1 && strlen(argv[1]) > 0) stat = argv[1];
 	// if there is a second one, use it as trail charset
-	if(argc > 2){
+	if(argc > 2 && strlen(argv[2]) > 0){
 		trail = argv[2];
 		customtrail = 1;
 		trail_len = strlen(trail);
@@ -121,6 +124,7 @@ int main(int argc, char *argv[]){
 
 	start_color();
 	use_default_colors();
+	// use vibrant colors
 	init_pair(BLACK, -1, -1);
 	init_pair(RED, COLOR_RED, -1);
 	init_pair(CYAN, COLOR_CYAN, -1);
@@ -241,6 +245,9 @@ int main(int argc, char *argv[]){
 			}else if(stat[i] == '"'){
 				addch('"');
 				cur_len++;
+			}else if(stat[i] == '!'){
+				addch('!');
+				cur_len++;
 			// if the escape char is a newline, increment
 			// status string height and reset position
 			}else if(stat[i] == 'n'){
@@ -261,9 +268,7 @@ int main(int argc, char *argv[]){
 	for(int i=0; i<stat_height; ++i){
 		move(3+i, 4);
 		addwstr(L"│");
-		addch(' ');
-		move(3+i, 6+stat_len);
-		addch(' ');
+		move(3+i, 7+stat_len);
 		addwstr(L"│");
 	}
 
@@ -284,9 +289,17 @@ int main(int argc, char *argv[]){
 		if(signal_status == SIGINT || signal_status == SIGQUIT) finish();
 		if(signal_status == SIGTSTP) finish();
 
-		// if q is pressed, quit
 		if((keypress = wgetch(stdscr)) != ERR){
+			// if q is pressed, quit
 			if(keypress == 'q') finish();
+			// if l is pressed, lock until l is pressed again
+			if(keypress == 'l'){
+				int key;
+				do{
+					napms(1000);
+					key = getch();
+				}while(key != 'l');
+			}
 		}
 
 		// iterate over every other column (we only render half the columns
@@ -305,22 +318,23 @@ int main(int argc, char *argv[]){
 				// if the head can be drawn, draw it in white, and save it
 				// so that it can be greenified next update
 				if(streams[i].head >= 0 && streams[i].head < LINES){
-					// if there is a custom trail, use the stream's random seed
-					// and y position to get the correct char of the trail, otherwise
-					// take a random character in the range [33, 123]
+					// if there is a custom trail, use the stream's random
+					// seed and y position to get the correct char of the
+					// trail, otherwise take a random character in the range
+					// [33, 123]
 					if(customtrail) streams[i].last =
 						trail[(streams[i].seed+streams[i].head)%trail_len];
 					else streams[i].last = (int)rand()%90 + 33;
 					trych(streams[i].last, streams[i].head, i*2);
 				}
-				// if the tail is in frame, draw it (by drawing a space character
-				// over the previous tail
+				// if the tail is in frame, draw it (by drawing a
+				// space character over the previous tail
 				if(streams[i].head >= streams[i].len &&
 				streams[i].head < LINES+streams[i].len){
 					trych(' ', streams[i].head-streams[i].len, i*2);
 				}
-				// if the entire trail has gone off screen, move it back up to a random
-				// location and reset its length, speed, seed
+				// if the entire trail has gone off screen, move it back
+				// up to a random location and reset its length, speed, seed
 				if(streams[i].head >= LINES+streams[i].len){
 					streams[i].head = -5 - (int)rand()%20;
 					streams[i].len = 7 + (int)rand()%20;
@@ -353,7 +367,7 @@ int main(int argc, char *argv[]){
 			time_t rawtime = time(0);
 			struct tm *loc = localtime(&rawtime);
 			attron(COLOR_PAIR(hour_col));
-			addch('0' + (loc->tm_hour)/11);
+			addch('0' + (loc->tm_hour)/10);
 			addch('0' + (loc->tm_hour)%10);
 			attroff(COLOR_PAIR(hour_col));
 		}
