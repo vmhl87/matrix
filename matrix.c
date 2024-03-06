@@ -45,6 +45,7 @@ typedef struct stream{
 	int head;
 	int len;
 	int mod;
+	int seed;
 	char last;
 }stream;
 
@@ -55,7 +56,16 @@ void trych(char c, int y, int x){
 }
 
 int main(int argc, char *argv[]){
-	if(argc > 1) stat = argv[1];
+	char *trail = "";
+	bool customtrail = 0;
+	int trail_len;
+
+	if(argc > 1 && strlen(argv[1]) > 0) stat = argv[1];
+	if(argc > 2){
+		trail = argv[2];
+		customtrail = 1;
+		trail_len = strlen(trail);
+	}
 
 	setlocale(LC_ALL, "");
 
@@ -96,6 +106,7 @@ int main(int argc, char *argv[]){
 		streams[i].head = -5 - (int)rand()%80;
 		streams[i].len = 7 + (int)rand()%20;
 		streams[i].mod = 1 + (int)rand()%3;
+		streams[i].seed = (int)rand()%300;
 	}
 
 	move(3, 6);
@@ -201,7 +212,9 @@ int main(int argc, char *argv[]){
 					attroff(COLOR_PAIR(COLOR_GREEN));
 				}
 				if(streams[i].head >= 0 && streams[i].head < LINES){
-					streams[i].last = (int)rand()%90 + 33;
+					if(customtrail) streams[i].last =
+						trail[(streams[i].seed+streams[i].head)%trail_len];
+					else streams[i].last = (int)rand()%90 + 33;
 					trych(streams[i].last, streams[i].head, i*2);
 				}
 				if(streams[i].head >= streams[i].len &&
@@ -212,6 +225,7 @@ int main(int argc, char *argv[]){
 					streams[i].head = -5 - (int)rand()%20;
 					streams[i].len = 7 + (int)rand()%20;
 					streams[i].mod = 1 + (int)rand()%3;
+					streams[i].seed = (int)rand()%300;
 				}
 				streams[i].head++;
 			}
