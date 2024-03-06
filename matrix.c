@@ -1,10 +1,12 @@
 #include <ncursesw/curses.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
 #include <locale.h>
 #include <stdio.h>
+#include <wchar.h>
 #include <time.h>
 
 // default status bar
@@ -239,23 +241,23 @@ int main(int argc, char *argv[]){
 	// print left and right bars around status
 	for(int i=0; i<stat_height; ++i){
 		move(3+i, 4);
-		addstr("│");
+		addwstr(L"│");
 		addch(' ');
 		move(3+i, 6+stat_len);
 		addch(' ');
-		addstr("│");
+		addwstr(L"│");
 	}
 
 	// print top and bottom and corners
 	move(2, 4);
-	addstr("┌");
-	for(int i=0; i<stat_len+2; ++i) addstr("─");
-	addstr("┐");
+	addwstr(L"┌");
+	for(int i=0; i<stat_len+2; ++i) addwstr(L"─");
+	addwstr(L"┐");
 
 	move(3+stat_height, 4);
-	addstr("└");
-	for(int i=0; i<stat_len+2; ++i) addstr("─");
-	addstr("┘");
+	addwstr(L"└");
+	for(int i=0; i<stat_len+2; ++i) addwstr(L"─");
+	addwstr(L"┘");
 
 	// rendering loop
 	while(++iter){
