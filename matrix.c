@@ -121,7 +121,6 @@ int main(int argc, char *argv[]){
 
 	// store keypress & battery amounts
 	int keypress, iter=0, bat_tens=0, bat_units=0;
-	get_battery(&bat_tens, &bat_units);
 
 	// store locations of hour, minute, battery in status
 	// this means that if multiple \h \m \b are present in
@@ -179,6 +178,8 @@ int main(int argc, char *argv[]){
 				min_height = stat_height;
 			// and same with battery
 			}else if(stat[i] == 'b'){
+				get_battery(&bat_tens, &bat_units);
+
 				addch('0' + (bat_tens/10)%10);
 				cur_len++;
 				addch('0' + bat_tens%10);
