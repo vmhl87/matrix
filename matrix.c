@@ -294,11 +294,13 @@ int main(int argc, char *argv[]){
 			if(keypress == 'q') finish();
 			// if l is pressed, lock until l is pressed again
 			if(keypress == 'l'){
+				timeout(-1);
 				int key;
 				do{
-					napms(1000);
-					key = getch();
+					napms(300);
+					key = wgetch(stdscr);
 				}while(key != 'l');
+				timeout(0);
 			}
 		}
 
