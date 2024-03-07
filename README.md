@@ -3,10 +3,8 @@
 I created this to use as a screensaver for my chromebook.
 I liked the aesthetic of cmatrix, but wanted to customize it more,
 specifically to add a status bar with battery percentage and time.
-I created this with one purpose only, and it's hardcoded for
-my chromebook's filesystem structure. Use at your own risk.
-It's also set in the Makefile to include ncurses headers from a
-non-standard location, which is a result of my odd setup.
+I created this with one purpose only, and it has a couple paths
+hardcoded, such as the location of the battery interface.
 
 This program can be run through command-line, with up to 2 arguments -
 status string and trail characterset. My script does limited parsing
