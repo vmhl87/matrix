@@ -20,3 +20,7 @@ The parser isn't smart enough to check if the status string goes off the screen,
 so be careful of that.
 
 Enjoy!
+
+
+Note: You'll need ncursesw headers to compile. On Debian-based distros this
+is usually the package `libncursesw5-dev`.
